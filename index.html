@@ -140,12 +140,53 @@ h1{font-size:20px;font-weight:600;text-align:center;margin-bottom:1.25rem}
 .two-col-header{display:grid;grid-template-columns:1fr 90px 90px;gap:8px;margin-bottom:6px;padding:0 2px}
 .two-col-header span{font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.04em;text-align:right}
 .two-col-header span:first-child{text-align:left}
+
+/* GitHub sync UI */
+.sync-bar{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:1rem;font-size:12px;color:var(--text-tertiary)}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--border-strong);flex-shrink:0}
+.sync-dot.synced{background:var(--good)}
+.sync-dot.syncing{background:var(--warn);animation:pulse 1s infinite}
+.sync-dot.error{background:var(--bad)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sync-btn{font-size:11px;padding:2px 8px;border:0.5px solid var(--border-strong);border-radius:20px;background:transparent;color:var(--text-tertiary);cursor:pointer}
+.sync-btn:hover{background:var(--bg-secondary)}
+
+.gh-setup{background:var(--bg-card);border:0.5px solid var(--accent-teal);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.gh-setup-title{font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:6px}
+.gh-setup-hint{font-size:12px;color:var(--text-secondary);margin-bottom:12px;line-height:1.6}
+.gh-setup input{width:100%;font-size:14px;padding:8px 10px;border:0.5px solid var(--border-strong);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary);margin-bottom:8px}
+.gh-setup input:focus{outline:none;border-color:var(--accent-teal)}
+.gh-setup-actions{display:flex;gap:8px;margin-top:4px}
 </style>
 </head>
 <body>
 <div class="app-titlebar"></div>
 <div class="wrap">
 <h1>Budget calculator</h1>
+
+<!-- GitHub sync status bar -->
+<div class="sync-bar" id="sync-bar">
+  <div class="sync-dot" id="sync-dot"></div>
+  <span id="sync-label">Not connected to GitHub</span>
+  <button class="sync-btn" onclick="showGHSetup()">Configure</button>
+</div>
+
+<!-- GitHub setup panel (hidden by default) -->
+<div class="gh-setup" id="gh-setup" style="display:none">
+  <div class="gh-setup-title">Connect to GitHub</div>
+  <div class="gh-setup-hint">
+    Your data will be saved as <code>data.json</code> in your GitHub repository automatically.<br>
+    <strong>Token:</strong> github.com → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token → check <strong>repo</strong> scope.<br>
+    <strong>Repo:</strong> enter as <code>username/repo-name</code> (e.g. <code>kavehdehkhoda/budget-calculator</code>).
+  </div>
+  <input type="password" id="gh-token" placeholder="GitHub personal access token (ghp_...)" />
+  <input type="text" id="gh-repo" placeholder="username/repository-name" />
+  <div class="gh-setup-actions">
+    <button class="btn-primary" onclick="saveGHConfig()">Save &amp; Connect</button>
+    <button class="btn-secondary" onclick="hideGHSetup()">Cancel</button>
+    <button class="btn-secondary" onclick="disconnectGH()" style="color:var(--bad)">Disconnect</button>
+  </div>
+</div>
 
 <div class="tabs" role="tablist">
   <button class="tab-btn active" id="tab-budget-btn" onclick="setTab('budget')">Budget</button>
@@ -841,9 +882,158 @@ function importData(event) {
   r.readAsText(file); event.target.value='';
 }
 
+// ── GitHub Sync ────────────────────────────────────────────────────
+var GH_CONFIG_KEY = 'budgetCalc_ghConfig';
+var ghConfig = null;
+var syncTimer = null;
+var ghFileSHA = null; // needed for GitHub API updates
+
+function loadGHConfig() {
+  try {
+    var raw = localStorage.getItem(GH_CONFIG_KEY);
+    if (raw) { ghConfig = JSON.parse(raw); return true; }
+  } catch(e) {}
+  return false;
+}
+
+function saveGHConfig() {
+  var token = document.getElementById('gh-token').value.trim();
+  var repo  = document.getElementById('gh-repo').value.trim();
+  if (!token || !repo) { alert('Please enter both your token and repository name.'); return; }
+  if (!repo.includes('/')) { alert('Repository must be in format: username/repo-name'); return; }
+  ghConfig = { token: token, repo: repo };
+  localStorage.setItem(GH_CONFIG_KEY, JSON.stringify(ghConfig));
+  hideGHSetup();
+  setSyncStatus('syncing', 'Connecting...');
+  loadFromGitHub(function(ok) {
+    if (ok) { setSyncStatus('synced', 'Connected to GitHub'); }
+    else     { setSyncStatus('error', 'Could not connect — check token and repo name'); }
+  });
+}
+
+function disconnectGH() {
+  if (!confirm('Disconnect from GitHub? Your local data will not be affected.')) return;
+  ghConfig = null; ghFileSHA = null;
+  localStorage.removeItem(GH_CONFIG_KEY);
+  setSyncStatus('', 'Not connected to GitHub');
+  hideGHSetup();
+}
+
+function showGHSetup() {
+  var panel = document.getElementById('gh-setup');
+  if (panel) panel.style.display = 'block';
+  if (ghConfig) {
+    var ti = document.getElementById('gh-token'); if (ti) ti.value = ghConfig.token;
+    var ri = document.getElementById('gh-repo');  if (ri) ri.value  = ghConfig.repo;
+  }
+}
+
+function hideGHSetup() {
+  var panel = document.getElementById('gh-setup');
+  if (panel) panel.style.display = 'none';
+}
+
+function setSyncStatus(state, label) {
+  var dot = document.getElementById('sync-dot');
+  var lbl = document.getElementById('sync-label');
+  if (dot) { dot.className = 'sync-dot' + (state ? ' ' + state : ''); }
+  if (lbl) lbl.textContent = label;
+}
+
+function loadFromGitHub(callback) {
+  if (!ghConfig) { if (callback) callback(false); return; }
+  var url = 'https://api.github.com/repos/' + ghConfig.repo + '/contents/data.json';
+  fetch(url, {
+    headers: {
+      'Authorization': 'token ' + ghConfig.token,
+      'Accept': 'application/vnd.github.v3+json'
+    }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(json) {
+    if (json.content) {
+      ghFileSHA = json.sha;
+      var decoded = atob(json.content.replace(/\n/g,''));
+      var parsed = JSON.parse(decoded);
+      if (parsed.income && parsed.expenses) {
+        var d = {};
+        var dkeys = Object.keys(defaultData);
+        for (var i=0;i<dkeys.length;i++) d[dkeys[i]] = defaultData[dkeys[i]];
+        var pkeys = Object.keys(parsed);
+        for (var i=0;i<pkeys.length;i++) d[pkeys[i]] = parsed[pkeys[i]];
+        d.history = parsed.history || {};
+        d.investments = parsed.investments || defaultData.investments;
+        data = d;
+        persist();
+        renderBudgetLists(); recalc();
+      }
+      if (callback) callback(true);
+    } else {
+      // File doesn't exist yet — that's fine, we'll create it on first save
+      ghFileSHA = null;
+      if (callback) callback(true);
+    }
+  })
+  .catch(function() { if (callback) callback(false); });
+}
+
+function saveToGitHub() {
+  if (!ghConfig) return;
+  setSyncStatus('syncing', 'Saving...');
+  var content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+  var url = 'https://api.github.com/repos/' + ghConfig.repo + '/contents/data.json';
+  var body = {
+    message: 'Budget update ' + new Date().toISOString().slice(0,10),
+    content: content
+  };
+  if (ghFileSHA) body.sha = ghFileSHA;
+  fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Authorization': 'token ' + ghConfig.token,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(json) {
+    if (json.content && json.content.sha) {
+      ghFileSHA = json.content.sha;
+      var now = new Date();
+      var timeStr = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+      setSyncStatus('synced', 'Saved to GitHub at ' + timeStr);
+    } else {
+      setSyncStatus('error', 'Save failed — check token permissions');
+    }
+  })
+  .catch(function() {
+    setSyncStatus('error', 'Save failed — check connection');
+  });
+}
+
+// Override persist to also trigger a debounced GitHub save
+var _originalPersist = persist;
+persist = function() {
+  _originalPersist();
+  if (!ghConfig) return;
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(function() { saveToGitHub(); }, 2000);
+};
+
 // ── Init ───────────────────────────────────────────────────────────
-renderBudgetLists();
-recalc();
+loadGHConfig();
+if (ghConfig) {
+  setSyncStatus('syncing', 'Loading from GitHub...');
+  loadFromGitHub(function(ok) {
+    if (ok) setSyncStatus('synced', 'Connected to GitHub');
+    else     setSyncStatus('error', 'Could not reach GitHub — using local data');
+    renderBudgetLists(); recalc();
+  });
+} else {
+  renderBudgetLists();
+  recalc();
+}
 </script>
 </body>
 </html>
