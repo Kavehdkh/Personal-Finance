@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Budget Calculator</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.47.0/tabler-icons.min.css" />
+<style>
+:root {
+  --bg-page:#F5F4F0;--bg-card:#FFFFFF;--bg-secondary:#F1EFE8;
+  --text-primary:#1F1F1D;--text-secondary:#5F5E5A;--text-tertiary:#888780;
+  --border:#E3E1D8;--border-strong:#CFCDC2;
+  --accent-purple:#3C3489;--accent-teal:#0F6E56;--accent-teal-light:#1D9E75;
+  --good:#0F6E56;--warn:#BA7517;--bad:#A32D2D;
+  --radius-md:8px;--radius-lg:12px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg-page:#1A1A18;--bg-card:#242422;--bg-secondary:#2C2C2A;
+  --text-primary:#F1EFE8;--text-secondary:#B4B2A9;--text-tertiary:#888780;
+  --border:#3A3A37;--border-strong:#4A4A46;
+  --accent-purple:#AFA9EC;--accent-teal:#5DCAA5;--accent-teal-light:#9FE1CB;
+  --good:#5DCAA5;--warn:#FAC775;--bad:#F09595;
+}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"SF Pro Text","Helvetica Neue",Arial,sans-serif;background:var(--bg-page);color:var(--text-primary);-webkit-font-smoothing:antialiased;min-height:100vh}
+.app-titlebar{-webkit-app-region:drag;padding:14px 0 0;text-align:center;user-select:none}
+.wrap{max-width:740px;margin:0 auto;padding:1rem 1.5rem 3rem}
+h1{font-size:20px;font-weight:600;text-align:center;margin-bottom:1.25rem}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:1.25rem;justify-content:center}
+.tab-btn{font-size:13px;padding:5px 14px;border:0.5px solid var(--border-strong);border-radius:20px;background:transparent;color:var(--text-secondary);cursor:pointer}
+.tab-btn.active{background:var(--text-primary);color:var(--bg-page);border-color:var(--text-primary)}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* Toggles */
+.display-toggle-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:1.25rem}
+.display-toggle-label{font-size:12px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em}
+.toggle-group{display:flex;gap:3px}
+.toggle-btn{font-size:12px;padding:4px 12px;border:0.5px solid var(--border-strong);border-radius:20px;background:transparent;color:var(--text-secondary);cursor:pointer;white-space:nowrap}
+.toggle-btn.active{background:var(--text-primary);color:var(--bg-page);border-color:var(--text-primary)}
+.toggle-btn.sm{font-size:11px;padding:3px 9px}
+.toggle-btn.sm.active{background:var(--accent-purple);border-color:var(--accent-purple);color:#fff}
+
+/* Sections */
+.section{background:var(--bg-card);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.section-title{font-size:13px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em}
+.section-hint{font-size:12px;color:var(--text-tertiary);margin-top:-8px;margin-bottom:12px;line-height:1.5}
+
+/* Fields */
+.field-row{display:grid;grid-template-columns:1fr 130px;gap:8px;align-items:center;margin-bottom:8px}
+.field-row.three-col{grid-template-columns:1fr 110px 110px}
+.field-row.with-actual{grid-template-columns:1fr 90px 90px}
+.field-row label{font-size:14px;color:var(--text-primary);display:flex;align-items:center;gap:6px}
+.field-row input[type=number]{text-align:right;font-size:14px;padding:6px 10px;border:0.5px solid var(--border-strong);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary);width:100%}
+.field-row input[type=number]:focus{outline:none;border-color:var(--accent-purple)}
+.field-row input.actual-input{background:transparent;border-color:var(--border)}
+.field-unit{font-size:11px;color:var(--text-tertiary);text-align:right;margin-top:-4px;margin-bottom:6px;padding-right:2px}
+.col-header{display:grid;gap:8px;margin-bottom:6px;padding:0 2px}
+.col-header span{font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.04em;text-align:right}
+.col-header span:first-child{text-align:left}
+.col-header.two{grid-template-columns:1fr 90px 90px}
+.col-header.three{grid-template-columns:1fr 110px 110px}
+
+/* Investment rows */
+.inv-row{display:grid;grid-template-columns:1fr 110px 110px;gap:8px;align-items:center;margin-bottom:8px}
+.inv-row label{font-size:14px;color:var(--text-primary);display:flex;align-items:center;gap:6px}
+.inv-row input[type=number]{text-align:right;font-size:14px;padding:6px 10px;border:0.5px solid var(--border-strong);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary);width:100%}
+.inv-row input[type=number]:focus{outline:none;border-color:var(--accent-purple)}
+.col-inv-header{display:grid;grid-template-columns:1fr 110px 110px;gap:8px;margin-bottom:6px;padding:0 2px}
+.col-inv-header span{font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.04em;text-align:right}
+.col-inv-header span:first-child{text-align:left}
+
+/* EF investment checkboxes */
+.ef-inv-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:14px}
+.ef-inv-row:last-child{border-bottom:none}
+.ef-inv-left{display:flex;flex-direction:column;gap:2px}
+.ef-inv-name{font-size:14px;color:var(--text-primary)}
+.ef-inv-balance{font-size:12px;color:var(--text-tertiary)}
+.ef-inv-right{display:flex;align-items:center;gap:8px}
+.ef-check-label{font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:5px;cursor:pointer}
+.ef-check-label input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--accent-teal)}
+
+/* Add row */
+.add-row{display:flex;gap:8px;margin-top:8px}
+.add-row input{flex:1;font-size:14px;padding:6px 10px;border:0.5px solid var(--border-strong);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary)}
+.add-row input:focus{outline:none;border-color:var(--accent-purple)}
+
+/* Buttons */
+.btn-add,.btn-secondary{font-size:13px;padding:6px 14px;border:0.5px solid var(--border-strong);border-radius:var(--radius-md);background:transparent;color:var(--text-secondary);cursor:pointer;white-space:nowrap}
+.btn-add:hover,.btn-secondary:hover{background:var(--bg-secondary)}
+.btn-primary{font-size:13px;padding:6px 14px;border:0.5px solid var(--text-primary);border-radius:var(--radius-md);background:var(--text-primary);color:var(--bg-page);cursor:pointer;white-space:nowrap}
+.btn-primary:hover{opacity:.85}
+.btn-remove{background:none;border:none;cursor:pointer;color:var(--text-tertiary);font-size:16px;padding:0 4px;line-height:1}
+.btn-remove:hover{color:var(--bad)}
+
+/* Metrics */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1rem}
+.metric{background:var(--bg-card);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:1rem}
+.metric-label{font-size:12px;color:var(--text-secondary);margin-bottom:4px}
+.metric-value{font-size:22px;font-weight:600;color:var(--text-primary)}
+.metric-value.good{color:var(--good)}.metric-value.warn{color:var(--warn)}.metric-value.bad{color:var(--bad)}
+.metric-sub{font-size:12px;color:var(--text-tertiary);margin-top:4px}
+
+/* Breakdown */
+.breakdown{background:var(--bg-card);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.breakdown-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:14px}
+.breakdown-row:last-child{border-bottom:none;font-weight:500}
+.breakdown-row .lbl{color:var(--text-secondary)}.breakdown-row .val{color:var(--text-primary)}
+.bar-wrap{height:8px;background:var(--bg-secondary);border-radius:4px;margin-top:12px;overflow:hidden;display:flex;gap:2px}
+.bar-seg{height:100%;border-radius:4px;transition:width .3s}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:10px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary)}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* Progress */
+.progress-bar{height:8px;background:var(--bg-secondary);border-radius:4px;margin-top:6px;overflow:hidden;position:relative}
+.progress-fill{height:100%;border-radius:4px;transition:width .3s;position:absolute;top:0;left:0}
+.progress-fill.ef-direct{background:var(--accent-teal)}
+.progress-fill.ef-invest{background:var(--accent-teal-light);opacity:.7}
+
+/* Misc */
+.divider{border:none;border-top:0.5px solid var(--border);margin:10px 0}
+.info-note{font-size:13px;color:var(--text-secondary);margin-top:12px;display:flex;align-items:flex-start;gap:6px}
+.footer-actions{display:flex;gap:8px;justify-content:center;margin-top:1.5rem;flex-wrap:wrap}
+.footer-note{text-align:center;font-size:12px;color:var(--text-tertiary);margin-top:1.5rem}
+.save-status{text-align:center;font-size:12px;color:var(--text-tertiary);margin-top:8px;min-height:16px}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:3px 10px;border-radius:20px;font-weight:500}
+.badge.closed{background:var(--bg-secondary);color:var(--text-secondary)}
+.badge.open{background:var(--bg-secondary);color:var(--accent-teal)}
+.month-select-row{display:flex;gap:8px;align-items:center;margin-bottom:1rem;flex-wrap:wrap}
+.month-select-row select{font-size:14px;padding:6px 10px;border:0.5px solid var(--border-strong);border-radius:var(--radius-md);background:var(--bg-secondary);color:var(--text-primary)}
+.history-table{width:100%;border-collapse:collapse;font-size:13px}
+.history-table th,.history-table td{text-align:right;padding:8px 6px;border-bottom:0.5px solid var(--border)}
+.history-table th:first-child,.history-table td:first-child{text-align:left}
+.history-table th{font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.04em;font-weight:500}
+.history-table td.diff-good{color:var(--good)}.history-table td.diff-bad{color:var(--bad)}
+.empty-state{text-align:center;padding:2rem 1rem;color:var(--text-secondary);font-size:14px}
+.two-col-header{display:grid;grid-template-columns:1fr 90px 90px;gap:8px;margin-bottom:6px;padding:0 2px}
+.two-col-header span{font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.04em;text-align:right}
+.two-col-header span:first-child{text-align:left}
+</style>
+</head>
+<body>
+<div class="app-titlebar"></div>
+<div class="wrap">
+<h1>Budget calculator</h1>
+
+<div class="tabs" role="tablist">
+  <button class="tab-btn active" id="tab-budget-btn" onclick="setTab('budget')">Budget</button>
+  <button class="tab-btn" id="tab-actuals-btn" onclick="setTab('actuals')">Actuals</button>
+  <button class="tab-btn" id="tab-history-btn" onclick="setTab('history')">History</button>
+</div>
+
+<!-- ══════════════════════════ BUDGET TAB ══════════════════════════ -->
+<div class="tab-content active" id="tab-budget">
+
+  <div class="display-toggle-row">
+    <span class="display-toggle-label">Display as</span>
+    <div class="toggle-group">
+      <button class="toggle-btn active" id="disp-monthly" onclick="setDisplay('monthly')">Monthly</button>
+      <button class="toggle-btn" id="disp-annual" onclick="setDisplay('annual')">Annual</button>
+    </div>
+  </div>
+
+  <!-- Income -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">Income</span>
+      <div class="toggle-group">
+        <button class="toggle-btn sm active" id="income-freq-mo" onclick="setSectionFreq('income','monthly')">Monthly</button>
+        <button class="toggle-btn sm" id="income-freq-yr" onclick="setSectionFreq('income','annual')">Annual</button>
+      </div>
+    </div>
+    <div id="income-list"></div>
+    <div class="add-row">
+      <input type="text" id="income-name" placeholder="Add income source..." />
+      <button class="btn-add" onclick="addIncomeRow()">+ Add</button>
+    </div>
+  </div>
+
+  <!-- Investments -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">Investments</span>
+      <div class="toggle-group">
+        <button class="toggle-btn sm active" id="invest-freq-mo" onclick="setSectionFreq('invest','monthly')">Monthly</button>
+        <button class="toggle-btn sm" id="invest-freq-yr" onclick="setSectionFreq('invest','annual')">Annual</button>
+      </div>
+    </div>
+    <p class="section-hint">Track your investment accounts and monthly contributions. Balances are absolute dollar amounts.</p>
+    <div class="col-inv-header">
+      <span>Account</span><span>Balance ($)</span><span>Contribution</span>
+    </div>
+    <div id="invest-list"></div>
+    <div class="add-row">
+      <input type="text" id="invest-name" placeholder="Add investment account..." />
+      <button class="btn-add" onclick="addInvestRow()">+ Add</button>
+    </div>
+  </div>
+
+  <!-- Emergency Fund -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">Emergency Fund</span>
+    </div>
+    <p class="section-hint">Set your target as months of expenses or a fixed dollar amount. Optionally count investment balances toward your goal.</p>
+
+    <div class="field-row">
+      <label>Months of expenses to save</label>
+      <input type="number" min="0" max="36" step="0.5" id="ef-months" oninput="recalc()" />
+    </div>
+    <div class="field-row">
+      <label>Target amount (fixed, $)</label>
+      <input type="number" min="0" step="100" id="ef-target" oninput="recalc()" />
+    </div>
+    <div class="field-row">
+      <label>Current EF balance ($)</label>
+      <input type="number" min="0" step="50" id="ef-balance" oninput="recalc()" />
+    </div>
+    <div class="field-row">
+      <label>Monthly EF contribution</label>
+      <input type="number" min="0" step="50" id="ef-contrib" oninput="recalc()" />
+    </div>
+
+    <div class="divider" style="margin-top:14px;margin-bottom:12px"></div>
+    <div style="font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:8px;">COUNT INVESTMENT BALANCES TOWARD EF GOAL</div>
+    <p class="section-hint" style="margin-top:-4px">Check any investment whose balance should count toward your emergency fund target.</p>
+    <div id="ef-invest-checks">
+      <div class="empty-state" style="padding:1rem 0;font-size:13px;">Add investments above to see them here.</div>
+    </div>
+    <div id="ef-progress-block" style="margin-top:14px"></div>
+  </div>
+
+  <!-- Expenses -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">Expenses</span>
+      <div class="toggle-group">
+        <button class="toggle-btn sm active" id="expenses-freq-mo" onclick="setSectionFreq('expenses','monthly')">Monthly</button>
+        <button class="toggle-btn sm" id="expenses-freq-yr" onclick="setSectionFreq('expenses','annual')">Annual</button>
+      </div>
+    </div>
+    <div id="expense-list"></div>
+    <div class="add-row">
+      <input type="text" id="expense-name" placeholder="Add expense category..." />
+      <button class="btn-add" onclick="addExpenseRow()">+ Add</button>
+    </div>
+  </div>
+
+  <div class="metrics" id="metrics"></div>
+  <div class="breakdown" id="breakdown"></div>
+</div>
+
+<!-- ══════════════════════════ ACTUALS TAB ══════════════════════════ -->
+<div class="tab-content" id="tab-actuals">
+  <div class="month-select-row">
+    <label style="font-size:14px;">Month</label>
+    <select id="actuals-year" onchange="onActualsMonthChange()"></select>
+    <select id="actuals-month-select" onchange="onActualsMonthChange()"></select>
+    <span id="month-status-badge"></span>
+  </div>
+  <div class="section">
+    <div class="section-title">Income</div>
+    <div class="two-col-header"><span>Category</span><span>Budget</span><span>Actual</span></div>
+    <div id="actuals-income-list"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Investments</div>
+    <div class="two-col-header"><span>Account</span><span>Budget</span><span>Actual</span></div>
+    <div id="actuals-invest-list"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Emergency Fund</div>
+    <div class="two-col-header"><span>Category</span><span>Budget</span><span>Actual</span></div>
+    <div id="actuals-ef-list"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Expenses</div>
+    <div class="two-col-header"><span>Category</span><span>Budget</span><span>Actual</span></div>
+    <div id="actuals-expense-list"></div>
+  </div>
+  <div class="breakdown" id="actuals-summary"></div>
+  <div class="footer-actions">
+    <button class="btn-primary" id="close-month-btn" onclick="closeMonth()">&#128274; Close month</button>
+    <button class="btn-secondary" id="reopen-month-btn" onclick="reopenMonth()" style="display:none">&#128275; Reopen month</button>
+  </div>
+  <div class="save-status" id="actuals-save-status"></div>
+</div>
+
+<!-- ══════════════════════════ HISTORY TAB ══════════════════════════ -->
+<div class="tab-content" id="tab-history">
+  <div class="section">
+    <div class="section-title">Account progress</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px" id="invest-progress-cards"></div>
+    <div style="margin-top:12px">
+      <div style="font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:8px;">EMERGENCY FUND</div>
+      <div class="metric-value" id="hist-ef-balance" style="font-size:20px;font-weight:600"></div>
+      <div class="metric-sub" id="hist-ef-sub"></div>
+      <div class="progress-bar" style="margin-top:8px;height:10px">
+        <div class="progress-fill ef-invest" id="hist-ef-invest-fill"></div>
+        <div class="progress-fill ef-direct" id="hist-ef-direct-fill"></div>
+      </div>
+      <div class="legend" style="margin-top:8px" id="hist-ef-legend"></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Closed months</div>
+    <div id="history-content"></div>
+  </div>
+</div>
+
+<div class="footer-actions">
+  <button class="btn-secondary" onclick="exportData()">&#8595; Export backup (.json)</button>
+  <button class="btn-secondary" onclick="document.getElementById('import-file').click()">&#8593; Import backup</button>
+  <input type="file" id="import-file" accept="application/json" style="display:none" onchange="importData(event)" />
+</div>
+<div class="footer-note">Data saves automatically in this browser. Export a backup regularly in case the browser cache is cleared.</div>
+</div>
+
+<script>
+const STORAGE_KEY = 'budgetCalc_v4';
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+let displayFreq = 'monthly';
+let sectionFreq = { income:'monthly', invest:'monthly', expenses:'monthly' };
+
+// Default investments: RRSP built-in, user can add more
+const defaultData = {
+  income:   [{ name:'Employment (after tax)', value:5000 }],
+  investments: [
+    { id:'rrsp', name:'RRSP', balance:0, contribution:300, target:0, countForEF:false }
+  ],
+  expenses: [
+    { name:'Housing (rent / mortgage)', value:1500 },
+    { name:'Groceries', value:600 },
+    { name:'Transport', value:300 },
+    { name:'Utilities', value:150 },
+    { name:'Entertainment', value:150 }
+  ],
+  efMonths:3, efTarget:0, efBalance:0, efContrib:200,
+  history:{}
+};
+
+let data = loadData();
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) { const p=JSON.parse(raw); return Object.assign({},defaultData,p,{history:p.history||{},investments:p.investments||defaultData.investments}); }
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(defaultData));
+}
+function persist() { try { localStorage.setItem(STORAGE_KEY,JSON.stringify(data)); } catch(e){} }
+function fmtCAD(n) { return '$'+Math.round(n).toLocaleString('en-CA'); }
+function escapeHtml(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function currentMonthKey() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function monthKeyOf(y,m) { return y+'-'+String(m).padStart(2,'0'); }
+function prevMonthKey(k) { const [y,m]=k.split('-').map(Number); const d=new Date(y,m-2,1); return monthKeyOf(d.getFullYear(),d.getMonth()+1); }
+function monthLabel(k) { const [y,m]=k.split('-').map(Number); return MONTH_NAMES[m-1]+' '+y; }
+function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+function toMonthly(val,section) { return sectionFreq[section]==='annual'?val/12:val; }
+function toEntry(mv,section) { return sectionFreq[section]==='annual'?mv*12:mv; }
+function toDisplay(mv) { return displayFreq==='annual'?mv*12:mv; }
+function displayLabel() { return displayFreq==='annual'?'/yr':'/mo'; }
+function entryLabel(section) { return sectionFreq[section]==='annual'?'annual':'monthly'; }
+function round2(n) { return Math.round(n*100)/100; }
+
+// ── Tabs ───────────────────────────────────────────────────────────
+function setTab(tab) {
+  ['budget','actuals','history'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+    document.getElementById('tab-'+t+'-btn').classList.toggle('active',t===tab);
+  });
+  if(tab==='actuals') renderActuals();
+  if(tab==='history') renderHistory();
+}
+
+// ── Display toggle ─────────────────────────────────────────────────
+function setDisplay(f) {
+  displayFreq=f;
+  document.getElementById('disp-monthly').classList.toggle('active',f==='monthly');
+  document.getElementById('disp-annual').classList.toggle('active',f==='annual');
+  recalc();
+}
+
+// ── Section freq ───────────────────────────────────────────────────
+function setSectionFreq(section,f) {
+  sectionFreq[section]=f;
+  ['mo','yr'].forEach(s=>{
+    const el=document.getElementById(section+'-freq-'+s);
+    if(el) el.classList.toggle('active',(s==='mo'&&f==='monthly')||(s==='yr'&&f==='annual'));
+  });
+  renderBudgetLists(); recalc();
+}
+
+// ── Budget rendering ───────────────────────────────────────────────
+function renderBudgetLists() {
+  // Income
+  const il=document.getElementById('income-list'); il.innerHTML='';
+  data.income.forEach((item,idx)=>il.appendChild(makeSimpleRow('income',idx,item)));
+
+  // Investments
+  const invl=document.getElementById('invest-list'); invl.innerHTML='';
+  data.investments.forEach((inv,idx)=>invl.appendChild(makeInvestRow(idx,inv)));
+
+  // EF fields
+  document.getElementById('ef-months').value  = data.efMonths;
+  document.getElementById('ef-target').value  = data.efTarget;
+  document.getElementById('ef-balance').value = data.efBalance;
+  document.getElementById('ef-contrib').value = data.efContrib;
+
+  // EF investment checkboxes
+  renderEFChecks();
+
+  // Expenses
+  const el=document.getElementById('expense-list'); el.innerHTML='';
+  data.expenses.forEach((item,idx)=>el.appendChild(makeSimpleRow('expenses',idx,item)));
+}
+
+function makeSimpleRow(listKey, idx, item) {
+  const section=listKey==='income'?'income':'expenses';
+  const entryVal=round2(toEntry(item.value,section));
+  const removable=listKey==='income'?data.income.length>1:true;
+  const row=document.createElement('div'); row.className='field-row';
+  row.innerHTML='<label>'+escapeHtml(item.name)+
+    (removable?'<button class="btn-remove" onclick="removeSimpleRow(\''+listKey+'\','+idx+')">&times;</button>':'')+
+    '</label><input type="number" min="0" step="50" value="'+entryVal+'" oninput="updateSimpleValue(\''+listKey+'\','+idx+',this.value)" />';
+  return row;
+}
+
+function makeInvestRow(idx, inv) {
+  const entryContrib=round2(toEntry(inv.contribution,'invest'));
+  const row=document.createElement('div'); row.className='inv-row';
+  // RRSP (idx 0) is not removable as it's the default
+  const removable=idx>0;
+  row.innerHTML=
+    '<label>'+escapeHtml(inv.name)+
+      (removable?'<button class="btn-remove" onclick="removeInvestRow('+idx+')">&times;</button>':'')+
+    '</label>'+
+    '<input type="number" min="0" step="100" placeholder="0" value="'+(inv.balance||'')+'" oninput="updateInvest('+idx+',\'balance\',this.value)" />'+
+    '<input type="number" min="0" step="50" placeholder="0" value="'+entryContrib+'" oninput="updateInvest('+idx+',\'contribution\',this.value)" />';
+  return row;
+}
+
+function renderEFChecks() {
+  const c=document.getElementById('ef-invest-checks');
+  if(!data.investments.length){ c.innerHTML='<div class="empty-state" style="padding:1rem 0;font-size:13px;">Add investments above to see them here.</div>'; return; }
+  c.innerHTML='';
+  data.investments.forEach((inv,idx)=>{
+    const row=document.createElement('div'); row.className='ef-inv-row';
+    row.innerHTML=
+      '<div class="ef-inv-left">'+
+        '<div class="ef-inv-name">'+escapeHtml(inv.name)+'</div>'+
+        '<div class="ef-inv-balance">Balance: '+fmtCAD(inv.balance||0)+'</div>'+
+      '</div>'+
+      '<div class="ef-inv-right">'+
+        '<label class="ef-check-label">'+
+          '<input type="checkbox" '+(inv.countForEF?'checked':'')+' onchange="toggleEFCheck('+idx+',this.checked)" />'+
+          'Count toward EF'+
+        '</label>'+
+      '</div>';
+    c.appendChild(row);
+  });
+}
+
+function toggleEFCheck(idx, checked) {
+  data.investments[idx].countForEF=checked;
+  persist(); recalc();
+}
+
+function updateSimpleValue(listKey, idx, value) {
+  const section=listKey==='income'?'income':'expenses';
+  data[listKey][idx].value=toMonthly(parseFloat(value)||0,section);
+  persist(); recalc();
+}
+
+function removeSimpleRow(listKey, idx) { data[listKey].splice(idx,1); persist(); renderBudgetLists(); recalc(); }
+
+function updateInvest(idx, field, value) {
+  if(field==='contribution') data.investments[idx].contribution=toMonthly(parseFloat(value)||0,'invest');
+  else data.investments[idx][field]=parseFloat(value)||0;
+  persist(); renderEFChecks(); recalc();
+}
+
+function removeInvestRow(idx) { data.investments.splice(idx,1); persist(); renderBudgetLists(); recalc(); }
+
+function addIncomeRow() {
+  const ni=document.getElementById('income-name');
+  const name=ni.value.trim()||'Other income';
+  data.income.push({name,value:0}); ni.value='';
+  persist(); renderBudgetLists(); recalc();
+}
+
+function addInvestRow() {
+  const ni=document.getElementById('invest-name');
+  const name=ni.value.trim()||'Investment';
+  data.investments.push({id:uid(),name,balance:0,contribution:0,target:0,countForEF:false}); ni.value='';
+  persist(); renderBudgetLists(); recalc();
+}
+
+function addExpenseRow() {
+  const ni=document.getElementById('expense-name');
+  const name=ni.value.trim()||'Other';
+  data.expenses.push({name,value:0}); ni.value='';
+  persist(); renderBudgetLists(); recalc();
+}
+
+// ── recalc ────────────────────────────────────────────────────────
+function recalc() {
+  data.efMonths  = parseFloat(document.getElementById('ef-months').value)||0;
+  data.efTarget  = parseFloat(document.getElementById('ef-target').value)||0;
+  data.efBalance = parseFloat(document.getElementById('ef-balance').value)||0;
+  data.efContrib = parseFloat(document.getElementById('ef-contrib').value)||0;
+  persist();
+
+  const totalIncome      = data.income.reduce((a,b)=>a+b.value,0);
+  const totalExpenses    = data.expenses.reduce((a,b)=>a+b.value,0);
+  const totalInvestContrib = data.investments.reduce((a,b)=>a+b.contribution,0);
+  const totalSavings     = totalInvestContrib + data.efContrib;
+  const remaining        = totalIncome - totalExpenses - totalSavings;
+  const savingsRate      = totalIncome>0?(totalSavings/totalIncome)*100:0;
+
+  // EF target: prefer fixed target if set, else months×expenses
+  const efTargetByMonths = totalExpenses * (data.efMonths||0);
+  const effectiveEFTarget = data.efTarget>0 ? data.efTarget : efTargetByMonths;
+
+  // EF coverage: direct balance + any checked investment balances
+  const investCountedForEF = data.investments.filter(i=>i.countForEF).reduce((a,b)=>a+(b.balance||0),0);
+  const totalEFCoverage    = data.efBalance + investCountedForEF;
+  const efPct              = effectiveEFTarget>0 ? Math.min(100,Math.max(0,(totalEFCoverage/effectiveEFTarget)*100)) : 0;
+  const efDirectPct        = effectiveEFTarget>0 ? Math.min(100,Math.max(0,(data.efBalance/effectiveEFTarget)*100)) : 0;
+  const efInvestPct        = effectiveEFTarget>0 ? Math.min(100-efDirectPct,Math.max(0,(investCountedForEF/effectiveEFTarget)*100)) : 0;
+  const monthsToEF         = data.efContrib>0 && effectiveEFTarget>totalEFCoverage ? Math.ceil((effectiveEFTarget-totalEFCoverage)/data.efContrib) : null;
+
+  // EF progress block
+  let efProgressHTML='';
+  if(effectiveEFTarget>0){
+    efProgressHTML=
+      '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px">'+
+        fmtCAD(totalEFCoverage)+' of '+fmtCAD(effectiveEFTarget)+' target ('+efPct.toFixed(0)+'%)'+
+      '</div>'+
+      '<div class="progress-bar" style="height:10px">'+
+        '<div class="progress-fill ef-invest" style="width:'+(efDirectPct+efInvestPct)+'%"></div>'+
+        '<div class="progress-fill ef-direct" style="width:'+efDirectPct+'%"></div>'+
+      '</div>'+
+      '<div class="legend" style="margin-top:8px">'+
+        '<div class="legend-item"><div class="dot" style="background:var(--accent-teal)"></div>EF balance ('+fmtCAD(data.efBalance)+')</div>'+
+        (investCountedForEF>0?'<div class="legend-item"><div class="dot" style="background:var(--accent-teal-light);opacity:.8"></div>Investment balances counted ('+fmtCAD(investCountedForEF)+')</div>':'')+
+      '</div>'+
+      (monthsToEF?'<div class="info-note" style="margin-top:10px"><span>'+monthsToEF+' months to reach your EF target at current contribution rate.</span></div>':''+
+        (totalEFCoverage>=effectiveEFTarget?'<div class="info-note" style="margin-top:10px;color:var(--good)"><span>&#10003; Emergency fund target reached!</span></div>':''));
+  } else {
+    efProgressHTML='<div style="font-size:12px;color:var(--text-tertiary)">Enter a target (months or fixed amount) to see progress.</div>';
+  }
+  document.getElementById('ef-progress-block').innerHTML=efProgressHTML;
+
+  // Summary metrics
+  const lbl=displayLabel();
+  const dI=toDisplay(totalIncome), dE=toDisplay(totalExpenses);
+  const dS=toDisplay(totalSavings), dR=toDisplay(Math.abs(remaining));
+  const rateClass=savingsRate>=20?'good':savingsRate>=10?'warn':'bad';
+  const remClass=remaining>=0?'good':'bad';
+
+  document.getElementById('metrics').innerHTML=
+    '<div class="metric"><div class="metric-label">Total income'+lbl+'</div><div class="metric-value">'+fmtCAD(dI)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Total expenses'+lbl+'</div><div class="metric-value">'+fmtCAD(dE)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Savings rate</div><div class="metric-value '+rateClass+'">'+savingsRate.toFixed(1)+'%</div></div>'+
+    '<div class="metric"><div class="metric-label">'+(remaining>=0?'Leftover':'Shortfall')+lbl+'</div><div class="metric-value '+remClass+'">'+fmtCAD(dR)+'</div></div>';
+
+  const expPct=totalIncome>0?Math.min((totalExpenses/totalIncome)*100,100):0;
+  const efCPct=totalIncome>0?Math.min((data.efContrib/totalIncome)*100,100-expPct):0;
+  const invPct=totalIncome>0?Math.min((totalInvestContrib/totalIncome)*100,100-expPct-efCPct):0;
+  const remPct=Math.max(0,100-expPct-efCPct-invPct);
+
+  const dEfC=toDisplay(data.efContrib), dInvC=toDisplay(totalInvestContrib);
+  const invNames=data.investments.map(i=>i.name).join(', ');
+
+  document.getElementById('breakdown').innerHTML=
+    '<div class="section-title">Where your money goes ('+lbl.replace('/','')+'  view)</div>'+
+    '<div class="breakdown-row"><span class="lbl">Expenses</span><span class="val">'+fmtCAD(dE)+lbl+'</span></div>'+
+    '<div class="breakdown-row"><span class="lbl">Investments ('+escapeHtml(invNames)+')</span><span class="val">'+fmtCAD(dInvC)+lbl+'</span></div>'+
+    '<div class="breakdown-row"><span class="lbl">Emergency fund</span><span class="val">'+fmtCAD(dEfC)+lbl+'</span></div>'+
+    '<hr class="divider" />'+
+    '<div class="breakdown-row"><span class="lbl">'+(remaining>=0?'Unallocated':'Over budget by')+'</span><span class="val" style="color:'+(remaining>=0?'var(--good)':'var(--bad)')+'">'+fmtCAD(dR)+lbl+'</span></div>'+
+    '<div class="bar-wrap">'+
+      '<div class="bar-seg" style="width:'+expPct+'%;background:var(--accent-purple)"></div>'+
+      '<div class="bar-seg" style="width:'+invPct+'%;background:var(--accent-teal-light)"></div>'+
+      '<div class="bar-seg" style="width:'+efCPct+'%;background:var(--accent-teal)"></div>'+
+      '<div class="bar-seg" style="width:'+remPct+'%;background:var(--border-strong)"></div>'+
+    '</div>'+
+    '<div class="legend">'+
+      '<div class="legend-item"><div class="dot" style="background:var(--accent-purple)"></div>Expenses</div>'+
+      '<div class="legend-item"><div class="dot" style="background:var(--accent-teal-light)"></div>Investments</div>'+
+      '<div class="legend-item"><div class="dot" style="background:var(--accent-teal)"></div>Emergency fund</div>'+
+      '<div class="legend-item"><div class="dot" style="background:var(--border-strong)"></div>Unallocated</div>'+
+    '</div>';
+}
+
+// ── Actuals ────────────────────────────────────────────────────────
+function getActualsRecord(k) {
+  if(!data.history[k]) data.history[k]={income:{},investments:{},ef:{},expenses:{},closed:false,investBalancesEnd:{},efBalanceEnd:null};
+  return data.history[k];
+}
+
+function populateMonthSelectors() {
+  const ys=document.getElementById('actuals-year'), ms=document.getElementById('actuals-month-select');
+  const [cy,cm]=currentMonthKey().split('-').map(Number);
+  let minY=cy;
+  Object.keys(data.history).forEach(k=>{const y=parseInt(k,10);if(y<minY)minY=y;});
+  const sv=ys.value||cy, sm=ms.value||cm;
+  ys.innerHTML='';
+  for(let y=minY;y<=cy;y++){const o=document.createElement('option');o.value=y;o.textContent=y;ys.appendChild(o);}
+  ms.innerHTML='';
+  MONTH_NAMES.forEach((n,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=n;ms.appendChild(o);});
+  ys.value=sv; ms.value=sm;
+}
+
+function selectedMonthKey() {
+  return monthKeyOf(parseInt(document.getElementById('actuals-year').value,10),parseInt(document.getElementById('actuals-month-select').value,10));
+}
+
+function onActualsMonthChange() { renderActuals(); }
+
+function renderActuals() {
+  populateMonthSelectors();
+  const k=selectedMonthKey(), rec=getActualsRecord(k), isClosed=!!rec.closed;
+
+  // Income
+  renderActualsSection('actuals-income-list',
+    data.income.map(i=>({key:i.name,name:i.name,budget:i.value})),
+    rec.income, isClosed);
+
+  // Investments
+  renderActualsSection('actuals-invest-list',
+    data.investments.map(i=>({key:i.id||i.name,name:i.name,budget:i.contribution})),
+    rec.investments, isClosed);
+
+  // EF
+  renderActualsSection('actuals-ef-list',
+    [{key:'ef',name:'Emergency fund contribution',budget:data.efContrib}],
+    rec.ef, isClosed);
+
+  // Expenses
+  renderActualsSection('actuals-expense-list',
+    data.expenses.map(i=>({key:i.name,name:i.name,budget:i.value})),
+    rec.expenses, isClosed);
+
+  renderActualsSummary(k, rec);
+
+  const isClosed2=!!rec.closed;
+  document.getElementById('month-status-badge').innerHTML=isClosed2
+    ?'<span class="badge closed">&#128274; Closed</span>'
+    :'<span class="badge open">&#128275; Open</span>';
+  document.getElementById('close-month-btn').style.display=isClosed2?'none':'inline-flex';
+  document.getElementById('reopen-month-btn').style.display=isClosed2?'inline-flex':'none';
+  document.getElementById('actuals-save-status').textContent='';
+}
+
+function renderActualsSection(cid, items, rec, isClosed) {
+  const c=document.getElementById(cid); c.innerHTML='';
+  items.forEach(item=>{
+    const av=rec[item.key]!==undefined?rec[item.key]:'';
+    const row=document.createElement('div'); row.className='field-row with-actual';
+    row.innerHTML='<label>'+escapeHtml(item.name)+'</label>'+
+      '<input type="number" value="'+Math.round(item.budget)+'" disabled style="opacity:0.6" />'+
+      '<input type="number" class="actual-input" min="0" step="10" placeholder="0" value="'+av+'" data-section="'+cid+'" data-key="'+escapeHtml(item.key)+'"'+
+      (isClosed?' disabled':' oninput="onActualInput(this)"')+' />';
+    c.appendChild(row);
+  });
+}
+
+function onActualInput(el) {
+  const k=selectedMonthKey(), rec=getActualsRecord(k);
+  const section=el.getAttribute('data-section'), key=el.getAttribute('data-key');
+  const val=parseFloat(el.value);
+  const groupMap={
+    'actuals-income-list':'income','actuals-invest-list':'investments',
+    'actuals-ef-list':'ef','actuals-expense-list':'expenses'
+  };
+  const group=groupMap[section];
+  if(!rec[group]) rec[group]={};
+  if(isNaN(val)) delete rec[group][key]; else rec[group][key]=val;
+  persist(); renderActualsSummary(k,rec);
+}
+
+function sumGroup(items, rec) {
+  return items.reduce((s,item)=>{ const v=rec[item.key||item.name]; return s+(typeof v==='number'?v:0); },0);
+}
+
+function renderActualsSummary(k, rec) {
+  const iItems=data.income.map(i=>({key:i.name,budget:i.value}));
+  const invItems=data.investments.map(i=>({key:i.id||i.name,budget:i.contribution}));
+  const efItems=[{key:'ef',budget:data.efContrib}];
+  const eItems=data.expenses.map(i=>({key:i.name,budget:i.value}));
+
+  const bI=iItems.reduce((a,b)=>a+b.budget,0),  aI=sumGroup(iItems,rec.income||{});
+  const bInv=invItems.reduce((a,b)=>a+b.budget,0), aInv=sumGroup(invItems,rec.investments||{});
+  const bEF=efItems.reduce((a,b)=>a+b.budget,0),  aEF=sumGroup(efItems,rec.ef||{});
+  const bE=eItems.reduce((a,b)=>a+b.budget,0),  aE=sumGroup(eItems,rec.expenses||{});
+  const bS=bInv+bEF, aS=aInv+aEF;
+  const bN=bI-bE-bS, aN=aI-aE-aS;
+
+  function dr(label,budget,actual,low){
+    const diff=actual-budget, fav=low?diff<=0:diff>=0;
+    const cls=diff===0?'text-secondary':(fav?'good':'bad');
+    return '<div class="breakdown-row"><span class="lbl">'+label+'</span><span class="val">'+fmtCAD(actual)+
+      ' <span style="color:var(--text-tertiary)">vs '+fmtCAD(budget)+'</span> &middot; '+
+      '<span style="color:var(--'+cls+')">'+(diff>0?'+':'')+fmtCAD(diff)+'</span></span></div>';
+  }
+  document.getElementById('actuals-summary').innerHTML=
+    '<div class="section-title">'+monthLabel(k)+' &middot; budget vs actual</div>'+
+    dr('Income',bI,aI,false)+
+    dr('Investments',bInv,aInv,false)+
+    dr('Emergency fund',bEF,aEF,false)+
+    dr('Expenses',bE,aE,true)+
+    '<hr class="divider" />'+
+    dr('Net (income - expenses - savings)',bN,aN,false);
+}
+
+function closeMonth() {
+  const k=selectedMonthKey(), rec=getActualsRecord(k);
+  // Roll investment balances forward: prev closing balance + this month's actual contribution
+  const prev=data.history[prevMonthKey(k)];
+  rec.investBalancesEnd={};
+  data.investments.forEach(inv=>{
+    const key=inv.id||inv.name;
+    const prevBal=(prev&&prev.closed&&prev.investBalancesEnd&&prev.investBalancesEnd[key]!=null)
+      ? prev.investBalancesEnd[key] : (inv.balance||0);
+    const actualContrib=(rec.investments&&rec.investments[key]!=null)?rec.investments[key]:0;
+    rec.investBalancesEnd[key]=prevBal+actualContrib;
+    // Update live balance
+    inv.balance=rec.investBalancesEnd[key];
+  });
+  // Roll EF balance
+  const prevEF=(prev&&prev.closed&&prev.efBalanceEnd!=null)?prev.efBalanceEnd:data.efBalance;
+  const actualEF=(rec.ef&&rec.ef['ef']!=null)?rec.ef['ef']:0;
+  rec.efBalanceEnd=prevEF+actualEF;
+  data.efBalance=rec.efBalanceEnd;
+  rec.closed=true;
+  persist(); renderBudgetLists(); recalc(); renderActuals();
+  document.getElementById('actuals-save-status').textContent=
+    monthLabel(k)+' closed. EF: '+fmtCAD(rec.efBalanceEnd)+'. Investments updated.';
+}
+
+function reopenMonth() {
+  const k=selectedMonthKey(), rec=getActualsRecord(k);
+  rec.closed=false; persist(); renderActuals();
+  document.getElementById('actuals-save-status').textContent=monthLabel(k)+' reopened. Balances were not automatically reverted.';
+}
+
+// ── History ────────────────────────────────────────────────────────
+function renderHistory() {
+  // Investment progress cards
+  const cards=document.getElementById('invest-progress-cards'); cards.innerHTML='';
+  data.investments.forEach(inv=>{
+    const card=document.createElement('div'); card.className='metric';
+    const pct=inv.target>0?Math.min(100,Math.max(0,(inv.balance/inv.target)*100)):null;
+    card.innerHTML=
+      '<div class="metric-label">'+escapeHtml(inv.name)+'</div>'+
+      '<div class="metric-value" style="font-size:20px">'+fmtCAD(inv.balance||0)+'</div>'+
+      (pct!==null
+        ?'<div class="metric-sub">'+pct.toFixed(0)+'% of '+fmtCAD(inv.target)+' target</div>'+
+          '<div class="progress-bar"><div class="progress-fill ef-direct" style="width:'+pct+'%;background:var(--accent-teal-light)"></div></div>'
+        :'<div class="metric-sub">No target set</div>');
+    cards.appendChild(card);
+  });
+
+  // EF progress
+  const totalExpenses=data.expenses.reduce((a,b)=>a+b.value,0);
+  const efTargetByMonths=totalExpenses*(data.efMonths||0);
+  const effectiveEFTarget=data.efTarget>0?data.efTarget:efTargetByMonths;
+  const investCounted=data.investments.filter(i=>i.countForEF).reduce((a,b)=>a+(b.balance||0),0);
+  const totalEFCoverage=data.efBalance+investCounted;
+  const efPct=effectiveEFTarget>0?Math.min(100,Math.max(0,(totalEFCoverage/effectiveEFTarget)*100)):0;
+  const efDirectPct=effectiveEFTarget>0?Math.min(100,Math.max(0,(data.efBalance/effectiveEFTarget)*100)):0;
+  const efInvPct=effectiveEFTarget>0?Math.min(100-efDirectPct,Math.max(0,(investCounted/effectiveEFTarget)*100)):0;
+
+  document.getElementById('hist-ef-balance').textContent=fmtCAD(totalEFCoverage);
+  document.getElementById('hist-ef-sub').textContent=effectiveEFTarget>0
+    ?efPct.toFixed(0)+'% of '+fmtCAD(effectiveEFTarget)+' target'
+    :'No target set';
+  document.getElementById('hist-ef-invest-fill').style.width=(efDirectPct+efInvPct)+'%';
+  document.getElementById('hist-ef-direct-fill').style.width=efDirectPct+'%';
+  document.getElementById('hist-ef-legend').innerHTML=
+    '<div class="legend-item"><div class="dot" style="background:var(--accent-teal)"></div>EF balance ('+fmtCAD(data.efBalance)+')</div>'+
+    (investCounted>0?'<div class="legend-item"><div class="dot" style="background:var(--accent-teal-light);opacity:.8"></div>Investments counted ('+fmtCAD(investCounted)+')</div>':'');
+
+  // Closed months table
+  const months=Object.keys(data.history).filter(k=>data.history[k].closed).sort().reverse();
+  const c=document.getElementById('history-content');
+  if(!months.length){c.innerHTML='<div class="empty-state">No months closed yet.</div>';return;}
+
+  let rows='';
+  months.forEach(k=>{
+    const r=data.history[k];
+    const iItems=data.income.map(i=>({key:i.name,budget:i.value}));
+    const invItems=data.investments.map(i=>({key:i.id||i.name,budget:i.contribution}));
+    const efItems=[{key:'ef',budget:data.efContrib}];
+    const eItems=data.expenses.map(i=>({key:i.name,budget:i.value}));
+    const bI=iItems.reduce((a,b)=>a+b.budget,0), aI=sumGroup(iItems,r.income||{});
+    const bS=invItems.reduce((a,b)=>a+b.budget,0)+efItems.reduce((a,b)=>a+b.budget,0);
+    const aS=sumGroup(invItems,r.investments||{})+sumGroup(efItems,r.ef||{});
+    const bE=eItems.reduce((a,b)=>a+b.budget,0), aE=sumGroup(eItems,r.expenses||{});
+    const dI=aI-bI, dS=aS-bS, dE=aE-bE;
+    rows+='<tr><td>'+monthLabel(k)+'</td>'+
+      '<td>'+fmtCAD(aI)+'</td><td class="'+(dI>=0?'diff-good':'diff-bad')+'">'+(dI>0?'+':'')+fmtCAD(dI)+'</td>'+
+      '<td>'+fmtCAD(aE)+'</td><td class="'+(dE<=0?'diff-good':'diff-bad')+'">'+(dE>0?'+':'')+fmtCAD(dE)+'</td>'+
+      '<td>'+fmtCAD(aS)+'</td><td class="'+(dS>=0?'diff-good':'diff-bad')+'">'+(dS>0?'+':'')+fmtCAD(dS)+'</td>'+
+      '</tr>';
+  });
+  c.innerHTML='<table class="history-table">'+
+    '<thead><tr><th>Month</th><th>Income</th><th>vs budget</th><th>Expenses</th><th>vs budget</th><th>Savings</th><th>vs budget</th></tr></thead>'+
+    '<tbody>'+rows+'</tbody></table>'+
+    '<div class="info-note" style="margin-top:14px"><span>Green = favorable, red = unfavorable vs your budget.</span></div>';
+}
+
+// ── Backup ─────────────────────────────────────────────────────────
+function exportData() {
+  const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(b), a=document.createElement('a');
+  a.href=u; a.download='budget-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(u);
+}
+function importData(event) {
+  const file=event.target.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=function(e){
+    try {
+      const p=JSON.parse(e.target.result);
+      if(!p.income||!p.expenses) throw new Error();
+      data=Object.assign({},defaultData,p,{history:p.history||{},investments:p.investments||defaultData.investments});
+      persist(); renderBudgetLists(); recalc();
+      document.getElementById('actuals-year').value='';
+      renderActuals(); renderHistory();
+      alert('Backup imported successfully.');
+    } catch(err){alert('Could not import this file.');}
+  };
+  r.readAsText(file); event.target.value='';
+}
+
+// ── Init ───────────────────────────────────────────────────────────
+renderBudgetLists();
+recalc();
+</script>
+</body>
+</html>
