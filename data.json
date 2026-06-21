@@ -1,0 +1,45 @@
+{
+  "income": [
+    {
+      "name": "Employment (after tax)",
+      "value": 5000
+    }
+  ],
+  "investments": [
+    {
+      "id": "rrsp",
+      "name": "RRSP",
+      "balance": 0,
+      "contribution": 300,
+      "target": 0,
+      "countForEF": false
+    }
+  ],
+  "expenses": [
+    {
+      "name": "Housing (rent / mortgage)",
+      "value": 4000
+    },
+    {
+      "name": "Groceries",
+      "value": 600
+    },
+    {
+      "name": "Transport",
+      "value": 300
+    },
+    {
+      "name": "Utilities",
+      "value": 150
+    },
+    {
+      "name": "Entertainment",
+      "value": 150
+    }
+  ],
+  "efMonths": 3,
+  "efTarget": 0,
+  "efBalance": 0,
+  "efContrib": 200,
+  "history": {}
+}
