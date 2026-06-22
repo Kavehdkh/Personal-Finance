@@ -51,6 +51,10 @@
     {
       "name": "Home Insurance",
       "value": 200
+    },
+    {
+      "name": "Investment",
+      "value": 0
     }
   ],
   "efMonths": 1,
