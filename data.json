@@ -58,7 +58,7 @@
     }
   ],
   "efMonths": 6,
-  "efTarget": 30000,
+  "efTarget": 0,
   "efBalance": 10000,
   "efContrib": 1500,
   "history": {}
