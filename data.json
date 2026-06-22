@@ -16,7 +16,7 @@
       "balance": 45000,
       "contribution": 1500,
       "target": 0,
-      "countForEF": true
+      "countForEF": false
     }
   ],
   "expenses": [
