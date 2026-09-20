@@ -61,7 +61,8 @@
       "expenses": {
         "Housing (rent / mortgage)": 3870,
         "Groceries": 1500,
-        "Transport": 400
+        "Transport": 400,
+        "Utilities": 200
       },
       "closed": false,
       "investBalancesEnd": {},
