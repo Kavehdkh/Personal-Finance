@@ -60,7 +60,8 @@
       "ef": {},
       "expenses": {
         "Housing (rent / mortgage)": 3870,
-        "Groceries": 1500
+        "Groceries": 1500,
+        "Transport": 400
       },
       "closed": false,
       "investBalancesEnd": {},
