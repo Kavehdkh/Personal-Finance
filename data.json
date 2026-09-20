@@ -63,7 +63,8 @@
         "Groceries": 1500,
         "Transport": 400,
         "Utilities": 200,
-        "Car": 580
+        "Car": 580,
+        "Car Insurance": 270
       },
       "closed": false,
       "investBalancesEnd": {},
