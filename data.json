@@ -64,7 +64,8 @@
         "Transport": 400,
         "Utilities": 200,
         "Car": 580,
-        "Car Insurance": 270
+        "Car Insurance": 270,
+        "Home Insurance": 200
       },
       "closed": false,
       "investBalancesEnd": {},
