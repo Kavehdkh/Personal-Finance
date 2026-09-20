@@ -58,7 +58,9 @@
       "income": {},
       "investments": {},
       "ef": {},
-      "expenses": {},
+      "expenses": {
+        "Housing (rent / mortgage)": 3870
+      },
       "closed": false,
       "investBalancesEnd": {},
       "efBalanceEnd": null
