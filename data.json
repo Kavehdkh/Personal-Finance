@@ -2,7 +2,7 @@
   "income": [
     {
       "name": "Other income",
-      "value": 11000
+      "value": 5000
     }
   ],
   "investments": [
@@ -53,5 +53,15 @@
   "efTarget": 0,
   "efBalance": 0,
   "efContrib": 2500,
-  "history": {}
+  "history": {
+    "2026-09": {
+      "income": {},
+      "investments": {},
+      "ef": {},
+      "expenses": {},
+      "closed": false,
+      "investBalancesEnd": {},
+      "efBalanceEnd": null
+    }
+  }
 }
