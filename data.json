@@ -62,7 +62,8 @@
         "Housing (rent / mortgage)": 3870,
         "Groceries": 1500,
         "Transport": 400,
-        "Utilities": 200
+        "Utilities": 200,
+        "Car": 580
       },
       "closed": false,
       "investBalancesEnd": {},
